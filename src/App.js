@@ -1,6 +1,11 @@
+import './App.css';
+import Field from './Field/Field.js';
+
 function App() {
   return (
-    <div>test</div>
+    <div className='app-container'>
+      <Field />
+    </div>
   );
 }
 

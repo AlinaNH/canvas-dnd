@@ -1,0 +1,36 @@
+.field-container {
+  display: flex;
+  flex-direction: row;
+  width: 900px;
+  height: 700px;
+  border: 1px solid black;
+}
+
+.field-section-figures {
+  width: 30%;
+  border-right: 1px solid black;
+}
+
+.field-section-canvas {
+  width: 70%;
+}
+
+.field-section-name {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 5%;
+  border-bottom: 1px solid black;
+  background-color: #e6e6e6;
+}
+
+.field-section-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.field-section-container div {
+  margin: 10% 0;
+}
