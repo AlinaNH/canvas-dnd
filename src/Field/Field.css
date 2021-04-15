@@ -22,6 +22,7 @@
   height: 5%;
   border-bottom: 1px solid black;
   background-color: #e6e6e6;
+  user-select: none;
 }
 
 .field-section-container {
@@ -31,6 +32,6 @@
   flex-direction: column;
 }
 
-.field-section-container div {
+.field-section-container .figure {
   margin: 10% 0;
 }
