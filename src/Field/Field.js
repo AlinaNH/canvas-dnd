@@ -9,8 +9,9 @@ import { addFigure, moveFigure } from '../redux/actions';
 class Field extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { count: 0 };
+    this.state = { count: 0, highlighted: null };
     this.dragElement = this.dragElement.bind(this);
+    this.highlightElement = this.highlightElement.bind(this);
   }
 
   dragElement = (event) => {
@@ -57,9 +58,30 @@ class Field extends React.Component {
     }
   };
 
+  highlightElement = (event) => {
+    const element = event.target;
+    const highlighted = this.state.highlighted;
+  
+    if (element.id && !this.state.highlighted) {
+      element.style.border = '2px dashed yellow';
+      this.setState({ highlighted: element });
+    } else if (element.id && this.state.highlighted.id !== element.id) {
+      highlighted.style.border = '1px solid black';
+      element.style.border = '2px dashed yellow';
+      this.setState({ highlighted: element });
+    } else {
+      highlighted.style.border = '1px solid black';
+      this.setState({ highlighted: null });
+    }
+  };
+
   render() {
     return (
-      <div className='field-container' onMouseDown={(event) => this.dragElement(event)}>
+      <div
+        className='field-container'
+        onMouseDown={(event) => this.dragElement(event)}
+        onClick={(event) => this.highlightElement(event)}
+      >
           <div className='field-section-figures'>
             <div className='field-section-name'>Figures</div>
             <div className='field-section-container'>
