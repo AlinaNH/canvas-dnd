@@ -24,12 +24,14 @@ class Field extends React.Component {
         left: box.left + pageXOffset
       };
 
-      element.id = this.state.count;
-      this.props.addFigure(element, coordinates);
-      this.setState({ count: this.state.count + 1 })
+      if (!element.id) {
+        const container = element.parentNode;
+        container.appendChild(element.cloneNode());
 
-      const container = element.parentNode;
-      container.appendChild(element.cloneNode());
+        element.id = this.state.count;
+        this.props.addFigure(element, coordinates);
+        this.setState({ count: this.state.count + 1 })
+      }
       
       const shiftX = event.pageX - coordinates.left;
       const shiftY = event.pageY - coordinates.top;
