@@ -9,7 +9,7 @@ import { addFigure, moveFigure } from '../redux/actions';
 class Field extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { count: 0, highlighted: null };
+    this.state = { count: 0, highlighted: null, zIndex: 1 };
     this.dragElement = this.dragElement.bind(this);
     this.highlightElement = this.highlightElement.bind(this);
   }
@@ -65,11 +65,17 @@ class Field extends React.Component {
     if (element.id && !this.state.highlighted) {
       element.style.border = '2px dashed yellow';
       this.setState({ highlighted: element });
+      element.style.zIndex = this.state.zIndex;
+      this.setState({ zIndex: this.state.zIndex + 1 });
     } else if (element.id && this.state.highlighted.id !== element.id) {
       highlighted.style.border = '1px solid black';
       element.style.border = '2px dashed yellow';
       this.setState({ highlighted: element });
-    } else {
+      element.style.zIndex = this.state.zIndex;
+      this.setState({ zIndex: this.state.zIndex + 1 });
+    } else if (element.id && this.state.highlighted.id === element.id) {
+      return;
+    } else if (!element.id && this.state.highlighted) {
       highlighted.style.border = '1px solid black';
       this.setState({ highlighted: null });
     }
