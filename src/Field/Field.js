@@ -4,7 +4,8 @@ import { connect } from 'react-redux';
 import './Field.css';
 import Circle from '../Circle/Circle.js';
 import Square from '../Square/Square.js';
-import { addFigure, moveFigure } from '../redux/actions';
+import { addFigure, moveFigure, isFigureInCanvas, deleteFigure } from '../redux/actions';
+import store from './../redux/store';
 
 class Field extends React.Component {
   constructor(props) {
@@ -12,6 +13,15 @@ class Field extends React.Component {
     this.state = { count: 0, highlighted: null, zIndex: 1 };
     this.dragElement = this.dragElement.bind(this);
     this.highlightElement = this.highlightElement.bind(this);
+  }
+
+  isOutOfCanvas = (coordinates, canvasBorder) => {
+    if (+coordinates.left.slice(0, -2) <= canvasBorder.left
+     || +coordinates.left.slice(0, -2) >= canvasBorder.right
+     || +coordinates.top.slice(0, -2) <= canvasBorder.top
+     || +coordinates.top.slice(0, -2) >= canvasBorder.bottom) {
+       return true;
+     } else return false;
   }
 
   dragElement = (event) => {
@@ -38,11 +48,40 @@ class Field extends React.Component {
       const shiftY = event.pageY - coordinates.top;
   
       element.style.position = 'absolute';
+
+      const canvas = document.querySelectorAll('.field-section-container')[1];
+      const canvasBorder = {
+        top: canvas.offsetTop,
+        right: canvas.offsetWidth + canvas.offsetLeft - element.offsetWidth,
+        bottom: canvas.offsetHeight + canvas.offsetTop - element.offsetHeight,
+        left: canvas.offsetLeft
+      };
       
       document.onmousemove = (event) => {
         event.preventDefault();
-        element.style.left = event.pageX - shiftX + 'px';
-        element.style.top = event.pageY - shiftY + 'px';
+        const isFigureInCanvas = store.getState().figuresReducer.figures[+element.id].isFigureInCanvas;
+    
+        if (!isFigureInCanvas) {
+          element.style.left = event.pageX - shiftX + 'px';
+          element.style.top = event.pageY - shiftY + 'px';
+        } else {
+          const newLocation = {
+            x: canvasBorder.left,
+            y: canvasBorder.top
+          };
+          if (event.pageX > canvasBorder.right) {
+            newLocation.x = canvasBorder.right;
+          } else if (event.pageX > canvasBorder.left) {
+            newLocation.x = event.pageX;
+          }
+          if (event.pageY > canvasBorder.bottom) {
+            newLocation.y = canvasBorder.bottom;
+          } else if (event.pageY > canvasBorder.top) {
+            newLocation.y = event.pageY;
+          }
+          element.style.left = newLocation.x + 'px';
+          element.style.top = newLocation.y + 'px';
+        }
       };
   
       document.onmouseup = (event) => {
@@ -53,7 +92,14 @@ class Field extends React.Component {
           left: element.style.left,
           top: element.style.top
         }
-        this.props.moveFigure(element, newCoordinates);
+        
+        const isOutOfCanvas = this.isOutOfCanvas(newCoordinates, canvasBorder);
+        if (isOutOfCanvas) {
+          element.remove();
+        } else {
+          this.props.isFigureInCanvas(element, true);
+          this.props.moveFigure(element, newCoordinates); 
+        }
       };
     }
   };
@@ -97,10 +143,11 @@ class Field extends React.Component {
           </div>
           <div className='field-section-canvas'>
             <div className='field-section-name'>Canvas</div>
+            <div className='field-section-container'></div>
           </div>
       </div>
     );
   }
 }
   
-export default connect(null, { addFigure, moveFigure })(Field);
+export default connect(null, { addFigure, moveFigure, isFigureInCanvas, deleteFigure })(Field);
