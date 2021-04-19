@@ -127,12 +127,22 @@ class Field extends React.Component {
     }
   };
 
+  removeElementByDelete = (event) => {
+    const highlightedElement = this.state.highlighted;
+    if(event.keyCode === 46 && highlightedElement) {
+      highlightedElement.remove();
+      this.setState({ highlighted: null });
+    }
+  }
+
   render() {
     return (
       <div
         className='field-container'
         onMouseDown={(event) => this.dragElement(event)}
         onClick={(event) => this.highlightElement(event)}
+        onKeyDown={this.removeElementByDelete}
+        tabIndex={0}
       >
           <div className='field-section-figures'>
             <div className='field-section-name'>Figures</div>
