@@ -1,4 +1,9 @@
-import { ADD_FIGURE, MOVE_FIGURE, FIGURE_IN_CANVAS, DELETE_FIGURE } from '../actionTypes';
+import {
+  ADD_FIGURE,
+  MOVE_FIGURE,
+  IS_FIGURE_IN_CANVAS,
+  DELETE_FIGURE
+} from '../actionTypes';
 
 export default function figuresReducer(state = { figures: [] }, action) {
   switch (action.type) {
@@ -8,19 +13,22 @@ export default function figuresReducer(state = { figures: [] }, action) {
 
     case  MOVE_FIGURE: {
       const movedElement = action.payload;
-      state.figures[movedElement.element.id].coordinates = movedElement.newCoordinates;
+      const elementIndex = movedElement.element.id.split('figure_')[1];
+      state.figures[elementIndex].coordinates = movedElement.newCoordinates;
       return { figures: [...state.figures]};
     }
 
-    case FIGURE_IN_CANVAS: {
+    case IS_FIGURE_IN_CANVAS: {
       const movedElement = action.payload;
-      state.figures[movedElement.element.id].isFigureInCanvas = movedElement.isFigureInCanvas;
+      const elementIndex = movedElement.element.id.split('figure_')[1];
+      state.figures[elementIndex].isFigureInCanvas = movedElement.isFigureInCanvas;
       return { figures: [...state.figures]};
     }
 
     case DELETE_FIGURE: {
       const element = action.payload.element;
-      state.figures.splice(element.id, 1);
+      const elementIndex = +element.id.split('figure_')[1];
+      state.figures.splice(elementIndex, 1);
       return { figures: [...state.figures]};
     }
 

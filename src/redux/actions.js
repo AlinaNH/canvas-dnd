@@ -1,4 +1,9 @@
-import { ADD_FIGURE, MOVE_FIGURE,FIGURE_IN_CANVAS, DELETE_FIGURE } from './actionTypes';
+import {
+  ADD_FIGURE,
+  MOVE_FIGURE,
+  IS_FIGURE_IN_CANVAS,
+  DELETE_FIGURE
+} from './actionTypes';
 
 let nextId = 0;
 
@@ -17,7 +22,7 @@ export const moveFigure = (element, newCoordinates) => ({
 });
 
 export const isFigureInCanvas = (element, isFigureInCanvas) => ({
-  type: FIGURE_IN_CANVAS,
+  type: IS_FIGURE_IN_CANVAS,
   payload: { element, isFigureInCanvas }
 });
 

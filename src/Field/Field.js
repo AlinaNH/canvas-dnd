@@ -4,84 +4,107 @@ import { connect } from 'react-redux';
 import './Field.css';
 import Circle from '../Circle/Circle.js';
 import Square from '../Square/Square.js';
-import { addFigure, moveFigure, isFigureInCanvas, deleteFigure } from '../redux/actions';
+import {
+  addFigure,
+  moveFigure,
+  isFigureInCanvas,
+  deleteFigure
+} from '../redux/actions';
 import store from './../redux/store';
 
 class Field extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { count: 0, highlighted: null, zIndex: 1 };
-    this.dragElement = this.dragElement.bind(this);
-    this.highlightElement = this.highlightElement.bind(this);
+    this.state = {
+      count: 0,
+      circles: [],
+      squares: [],
+      highlighted: null,
+      zIndex: 1,
+      highlightedBorderStyle: '2px dashed yellow',
+      defaultBorderStyle: '1px solid black'
+    };
+    this.dragAndDropElement = this.dragAndDropElement.bind(this);
+    this.highlightElementByClick = this.highlightElementByClick.bind(this);
   }
 
   isOutOfCanvas = (coordinates, canvasBorder) => {
-    if (+coordinates.left.slice(0, -2) <= canvasBorder.left
-     || +coordinates.left.slice(0, -2) >= canvasBorder.right
-     || +coordinates.top.slice(0, -2) <= canvasBorder.top
-     || +coordinates.top.slice(0, -2) >= canvasBorder.bottom) {
-       return true;
-     } else return false;
+    const elementBorderLeft = +coordinates.left.slice(0, -2);
+    const elementBorderTop = +coordinates.top.slice(0, -2);
+    return (elementBorderLeft <= canvasBorder.left
+     || elementBorderLeft >= canvasBorder.right
+     || elementBorderTop <= canvasBorder.top
+     || elementBorderTop >= canvasBorder.bottom) ? true : false;
   }
 
-  dragElement = (event) => {
-    if (event.target.className === 'circle' || event.target.className === 'square') {
-      event.preventDefault();
+  setCanvasBorder = (element) => {
+    const canvas = document.querySelector('.canvas');
+    return {
+      top: canvas.offsetTop,
+      right: canvas.offsetWidth + canvas.offsetLeft - element.offsetWidth,
+      bottom: canvas.offsetHeight + canvas.offsetTop - element.offsetHeight,
+      left: canvas.offsetLeft
+    };
+  } 
 
+  moveElement = (event, element, shiftX, shiftY, canvasBorder) => {
+    const figuresStore = store.getState().figuresReducer;
+    const elementIndex = +element.id.split('figure_')[1];
+    const isFigureInCanvas = figuresStore.figures[elementIndex].isFigureInCanvas;
+
+    if (!isFigureInCanvas) {
+      element.style.left = event.pageX - shiftX + 'px';
+      element.style.top = event.pageY - shiftY + 'px';
+    } else {
+      const newLocation = {
+        x: canvasBorder.left,
+        y: canvasBorder.top
+      };
+      if (event.pageX > canvasBorder.right) {
+        newLocation.x = canvasBorder.right;
+      } else if (event.pageX > canvasBorder.left) {
+        newLocation.x = event.pageX;
+      }
+      if (event.pageY > canvasBorder.bottom) {
+        newLocation.y = canvasBorder.bottom;
+      } else if (event.pageY > canvasBorder.top) {
+        newLocation.y = event.pageY;
+      }
+      element.style.left = newLocation.x + 'px';
+      element.style.top = newLocation.y + 'px';
+    }
+  }
+
+  dragAndDropElement = (event) => {
+    const elementClass = event.target.className;
+    if (elementClass === 'circle' || elementClass === 'square') {
       const element = event.target;
+      const canvasBorder = this.setCanvasBorder(element);
+
       const box = element.getBoundingClientRect();
       const coordinates = {
         top: box.top + pageYOffset,
         left: box.left + pageXOffset
       };
 
-      if (!element.id) {
-        const container = element.parentNode;
-        container.appendChild(element.cloneNode());
+      const shiftX = event.pageX - coordinates.left;
+      const shiftY = event.pageY - coordinates.top;
 
-        element.id = this.state.count;
+      if (!element.id) {
+        (elementClass === 'circle')
+          ? this.setState({ circles: [...this.state.circles, <Circle />] })
+          : this.setState({ squares: [...this.state.squares, <Square />] });
+
+        element.id = 'figure_' + this.state.count;
         this.props.addFigure(element, coordinates);
         this.setState({ count: this.state.count + 1 })
       }
-      
-      const shiftX = event.pageX - coordinates.left;
-      const shiftY = event.pageY - coordinates.top;
   
       element.style.position = 'absolute';
-
-      const canvas = document.querySelectorAll('.field-section-container')[1];
-      const canvasBorder = {
-        top: canvas.offsetTop,
-        right: canvas.offsetWidth + canvas.offsetLeft - element.offsetWidth,
-        bottom: canvas.offsetHeight + canvas.offsetTop - element.offsetHeight,
-        left: canvas.offsetLeft
-      };
       
       document.onmousemove = (event) => {
         event.preventDefault();
-        const isFigureInCanvas = store.getState().figuresReducer.figures[+element.id].isFigureInCanvas;
-    
-        if (!isFigureInCanvas) {
-          element.style.left = event.pageX - shiftX + 'px';
-          element.style.top = event.pageY - shiftY + 'px';
-        } else {
-          const newLocation = {
-            x: canvasBorder.left,
-            y: canvasBorder.top
-          };
-          if (event.pageX > canvasBorder.right) {
-            newLocation.x = canvasBorder.right;
-          } else if (event.pageX > canvasBorder.left) {
-            newLocation.x = event.pageX;
-          }
-          if (event.pageY > canvasBorder.bottom) {
-            newLocation.y = canvasBorder.bottom;
-          } else if (event.pageY > canvasBorder.top) {
-            newLocation.y = event.pageY;
-          }
-          element.style.left = newLocation.x + 'px';
-          element.style.top = newLocation.y + 'px';
-        }
+        this.moveElement(event, element, shiftX, shiftY, canvasBorder);
       };
   
       document.onmouseup = (event) => {
@@ -104,27 +127,33 @@ class Field extends React.Component {
     }
   };
 
-  highlightElement = (event) => {
+  makeElementHighlighed(element) {
+    element.style.border = this.state.highlightedBorderStyle;
+    element.style.zIndex = this.state.zIndex;
+    this.setState({ highlighted: element, zIndex: this.state.zIndex + 1 });
+  }
+
+  makeElementUnhighlighed(element) {
+    const highlighted = this.state.highlighted;
+
+    highlighted.style.border = this.state.defaultBorderStyle;
+    element.style.border = this.state.highlightedBorderStyle;
+    element.style.zIndex = this.state.zIndex;
+    this.setState({ highlighted: element, zIndex: this.state.zIndex + 1 });
+  }
+
+  highlightElementByClick = (event) => {
     const element = event.target;
     const highlighted = this.state.highlighted;
   
     if (element.id && !this.state.highlighted) {
-      element.style.border = '2px dashed yellow';
-      this.setState({ highlighted: element });
-      element.style.zIndex = this.state.zIndex;
-      this.setState({ zIndex: this.state.zIndex + 1 });
+      this.makeElementHighlighed(element)
     } else if (element.id && this.state.highlighted.id !== element.id) {
-      highlighted.style.border = '1px solid black';
-      element.style.border = '2px dashed yellow';
-      this.setState({ highlighted: element });
-      element.style.zIndex = this.state.zIndex;
-      this.setState({ zIndex: this.state.zIndex + 1 });
-    } else if (element.id && this.state.highlighted.id === element.id) {
-      return;
+      this.makeElementUnhighlighed(element);
     } else if (!element.id && this.state.highlighted) {
-      highlighted.style.border = '1px solid black';
+      highlighted.style.border = this.state.defaultBorderStyle;
       this.setState({ highlighted: null });
-    }
+    } else return;
   };
 
   removeElementByDelete = (event) => {
@@ -139,25 +168,36 @@ class Field extends React.Component {
     return (
       <div
         className='field-container'
-        onMouseDown={(event) => this.dragElement(event)}
-        onClick={(event) => this.highlightElement(event)}
+        onMouseDown={(event) => this.dragAndDropElement(event)}
+        onClick={(event) => this.highlightElementByClick(event)}
         onKeyDown={this.removeElementByDelete}
         tabIndex={0}
       >
           <div className='field-section-figures'>
             <div className='field-section-name'>Figures</div>
             <div className='field-section-container'>
-              <div className='figure'><Circle /></div>
-              <div className='figure'><Square /></div>
+              <div className='figure'>
+                <Circle />
+                {this.state.circles}
+              </div>
+              <div className='figure'>
+                <Square />
+                {this.state.squares}
+              </div>
             </div>
           </div>
           <div className='field-section-canvas'>
             <div className='field-section-name'>Canvas</div>
-            <div className='field-section-container'></div>
+            <div className='field-section-container canvas'></div>
           </div>
       </div>
     );
   }
 }
   
-export default connect(null, { addFigure, moveFigure, isFigureInCanvas, deleteFigure })(Field);
+export default connect(null, {
+  addFigure,
+  moveFigure,
+  isFigureInCanvas,
+  deleteFigure
+})(Field);
