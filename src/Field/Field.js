@@ -11,6 +11,7 @@ import {
   deleteFigure
 } from '../redux/actions';
 import store from './../redux/store';
+import Navigation from '../Navigation/Navigation';
 
 class Field extends React.Component {
   constructor(props) {
@@ -238,30 +239,33 @@ class Field extends React.Component {
 
   render() {
     return (
-      <div
-        className='field-container'
-        onMouseDown={(event) => this.dragAndDropElement(event)}
-        onKeyDown={this.removeElementByDelete}
-        tabIndex={0}
-      >
-          <div className='field-section-figures'>
-            <div className='field-section-name'>Figures</div>
-            <div className='field-section-container'>
-              <div className='figure'>
-                <Circle />
-                {this.state.circles}
-              </div>
-              <div className='figure'>
-                <Square />
-                {this.state.squares}
+      <>
+        <div
+          className='field-container'
+          onMouseDown={(event) => this.dragAndDropElement(event)}
+          onKeyDown={this.removeElementByDelete}
+          tabIndex={0}
+        >
+            <div className='field-section-figures'>
+              <div className='field-section-name'>Figures</div>
+              <div className='field-section-container'>
+                <div className='figure'>
+                  <Circle />
+                  {this.state.circles}
+                </div>
+                <div className='figure'>
+                  <Square />
+                  {this.state.squares}
+                </div>
               </div>
             </div>
-          </div>
-          <div className='field-section-canvas'>
-            <div className='field-section-name'>Canvas</div>
-            <div className='field-section-container canvas'></div>
-          </div>
-      </div>
+            <div className='field-section-canvas'>
+              <div className='field-section-name'>Canvas</div>
+              <div className='field-section-container canvas'></div>
+            </div>
+        </div>
+        <Navigation restoreData={this.restoreData} />
+      </>
     );
   }
 }
