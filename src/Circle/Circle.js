@@ -1,8 +1,8 @@
 import './Circle.css';
 
-function Circle() {
+function Circle(props) {
     return (
-      <div className='circle'></div>
+      <div className='circle' {...props}></div>
     );
   }
   

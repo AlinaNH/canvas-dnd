@@ -6,6 +6,10 @@
   border: 1px solid black;
 }
 
+.field-container:focus {
+  outline: none;
+}
+
 .field-section-figures {
   width: 30%;
   border-right: 1px solid black;

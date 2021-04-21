@@ -5,12 +5,10 @@ import {
   DELETE_FIGURE
 } from './actionTypes';
 
-let nextId = 0;
-
 export const addFigure = (element, coordinates) => ({
   type: ADD_FIGURE,
   payload: {
-    id: ++nextId,
+    id: +element.id.split('figure_')[1],
     element,
     coordinates
   }

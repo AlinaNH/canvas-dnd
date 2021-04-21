@@ -28,6 +28,46 @@ class Field extends React.Component {
     this.highlightElementByClick = this.highlightElementByClick.bind(this);
   }
 
+  restoreData = () => {
+    const figuresDataInLocalStorage = localStorage.getItem('figures');
+    if (figuresDataInLocalStorage) {
+      const figures = JSON.parse(figuresDataInLocalStorage);
+      const circles = [];
+      const squares = [];
+      let element = null;
+      const states = figures[figures.length-1];
+      figures.forEach((figure, index) => {
+          if (index < figures.length-1) {
+          const figureProps = { id: figure.id, className: figure.className, key: figure.key };
+          if (figure.className === 'circle') {
+            element = <Circle {...figureProps} style={figure.style} />;
+            circles.push(element);
+          } else {
+            element = <Square {...figureProps} style={figure.style} />;
+            squares.push(element);
+          }
+        }
+      });
+      this.setState({
+        circles: circles,
+        squares: squares,
+        count: states.count,
+        zIndex: states.zIndex
+      }, () => {
+        const circles = document.querySelectorAll('.circle');
+        const squares = document.querySelectorAll('.square');
+        [...circles, ...squares].forEach((element) => {
+          if (element.id) {
+            const left = window.getComputedStyle(element).left;
+            const top = window.getComputedStyle(element).top;
+            this.props.addFigure(element, {left: left, top: top});
+            this.props.isFigureInCanvas(element, true);
+          }
+        });
+      });
+    }
+  }
+
   isOutOfCanvas = (coordinates, canvasBorder) => {
     const elementBorderLeft = +coordinates.left.slice(0, -2);
     const elementBorderTop = +coordinates.top.slice(0, -2);
@@ -49,7 +89,8 @@ class Field extends React.Component {
 
   moveElement = (event, element, shiftX, shiftY, canvasBorder) => {
     const figuresStore = store.getState().figuresReducer;
-    const elementIndex = +element.id.split('figure_')[1];
+    const elementId = +element.id.split('figure_')[1];
+    const elementIndex = figuresStore.figures.map((figure) => figure.id).indexOf(elementId);
     const isFigureInCanvas = figuresStore.figures[elementIndex].isFigureInCanvas;
 
     if (!isFigureInCanvas) {
@@ -75,6 +116,29 @@ class Field extends React.Component {
     }
   }
 
+  saveFigures = () => {
+    const figures = store.getState().figuresReducer.figures;
+    const figuresData = [];
+    figures.forEach((figure) => {
+      const zIndex = window.document.defaultView.getComputedStyle(figure.element).getPropertyValue('z-index');
+      figuresData.push({
+        id: figure.element.id,
+        className: figure.element.className,
+        key: figure.element.id.split('figure_')[1],
+        style: {
+          left: figure.coordinates.left,
+          top: figure.coordinates.top,
+          zIndex: zIndex,
+          position: 'absolute'
+        }
+      });
+    });
+    figuresData.count = this.state.count;
+    figuresData.zIndex = this.state.zIndex;
+    figuresData.push({ count: this.state.count, zIndex: this.state.zIndex} );
+    localStorage.figures = JSON.stringify(figuresData);
+  }
+
   dragAndDropElement = (event) => {
     const elementClass = event.target.className;
     if (elementClass === 'circle' || elementClass === 'square') {
@@ -92,8 +156,8 @@ class Field extends React.Component {
 
       if (!element.id) {
         (elementClass === 'circle')
-          ? this.setState({ circles: [...this.state.circles, <Circle />] })
-          : this.setState({ squares: [...this.state.squares, <Square />] });
+          ? this.setState({ circles: [...this.state.circles, <Circle key={this.state.count} />] })
+          : this.setState({ squares: [...this.state.squares, <Square key={this.state.count} />] });
 
         element.id = 'figure_' + this.state.count;
         this.props.addFigure(element, coordinates);
@@ -115,13 +179,16 @@ class Field extends React.Component {
           left: element.style.left,
           top: element.style.top
         }
-        
+        this.highlightElementByClick(event);
         const isOutOfCanvas = this.isOutOfCanvas(newCoordinates, canvasBorder);
         if (isOutOfCanvas) {
           element.remove();
+          this.props.deleteFigure(element);
+          this.saveFigures();
         } else {
           this.props.isFigureInCanvas(element, true);
-          this.props.moveFigure(element, newCoordinates); 
+          this.props.moveFigure(element, newCoordinates);
+          this.saveFigures();
         }
       };
     }
@@ -135,7 +202,6 @@ class Field extends React.Component {
 
   makeElementUnhighlighed(element) {
     const highlighted = this.state.highlighted;
-
     highlighted.style.border = this.state.defaultBorderStyle;
     element.style.border = this.state.highlightedBorderStyle;
     element.style.zIndex = this.state.zIndex;
@@ -160,8 +226,14 @@ class Field extends React.Component {
     const highlightedElement = this.state.highlighted;
     if(event.keyCode === 46 && highlightedElement) {
       highlightedElement.remove();
+      this.props.deleteFigure(highlightedElement);
       this.setState({ highlighted: null });
+      this.saveFigures();
     }
+  }
+
+  componentDidMount() {
+    this.restoreData();
   }
 
   render() {
@@ -169,7 +241,6 @@ class Field extends React.Component {
       <div
         className='field-container'
         onMouseDown={(event) => this.dragAndDropElement(event)}
-        onClick={(event) => this.highlightElementByClick(event)}
         onKeyDown={this.removeElementByDelete}
         tabIndex={0}
       >

@@ -1,8 +1,8 @@
 import './Square.css';
 
-function Square() {
+function Square(props) {
     return (
-      <div className='square'></div>
+      <div className='square' {...props}></div>
     );
   }
   
